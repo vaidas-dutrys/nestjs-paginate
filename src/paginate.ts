@@ -50,6 +50,7 @@ export { FilterOperator, FilterSuffix }
 export class Paginated<T> {
     data: T[]
     meta: {
+        withoutCount?: boolean
         itemsPerPage: number
         totalItems?: number
         currentPage?: number
@@ -101,6 +102,7 @@ export interface PaginateConfig<T> {
     ignoreSearchByInQueryParam?: boolean
     ignoreSelectInQueryParam?: boolean
     multiWordSearch?: boolean
+    withoutCount?: boolean
     defaultJoinMethod?: JoinMethod
     joinMethods?: Partial<MappedColumns<T, JoinMethod>>
     buildCountQuery?: (qb: SelectQueryBuilder<T>) => SelectQueryBuilder<any>
@@ -915,7 +917,9 @@ export async function paginate<T extends ObjectLiteral>(
     } else if (isPaginated && config.paginationType !== PaginationType.CURSOR) {
         if (config.buildCountQuery) {
             items = await queryBuilder.getMany()
-            totalItems = await config.buildCountQuery(queryBuilder.clone()).getCount()
+            if (!config.withoutCount) {
+                totalItems = await config.buildCountQuery(queryBuilder.clone()).getCount()
+            }
         } else {
             ;[items, totalItems] = await queryBuilder.getManyAndCount()
         }
@@ -984,6 +988,7 @@ export async function paginate<T extends ObjectLiteral>(
     const results: Paginated<T> = {
         data: items,
         meta: {
+            withoutCount: config.withoutCount,
             itemsPerPage: config.paginationType === PaginationType.CURSOR ? items.length : itemsPerPage,
             totalItems: config.paginationType === PaginationType.CURSOR ? undefined : totalItemsForMeta,
             currentPage: config.paginationType === PaginationType.CURSOR ? undefined : currentPage,

@@ -106,6 +106,7 @@ export interface PaginateConfig<T> {
     defaultJoinMethod?: JoinMethod
     joinMethods?: Partial<MappedColumns<T, JoinMethod>>
     buildCountQuery?: (qb: SelectQueryBuilder<T>) => SelectQueryBuilder<any>
+    getCount?: (qb: SelectQueryBuilder<T>) => Promise<number>
 }
 
 export enum PaginationLimit {
@@ -915,10 +916,10 @@ export async function paginate<T extends ObjectLiteral>(
     if (query.limit === PaginationLimit.COUNTER_ONLY) {
         totalItems = await queryBuilder.getCount()
     } else if (isPaginated && config.paginationType !== PaginationType.CURSOR) {
-        if (config.buildCountQuery) {
+        if (config.getCount) {
             items = await queryBuilder.getMany()
             if (!config.withoutCount) {
-                totalItems = await config.buildCountQuery(queryBuilder.clone()).getCount()
+                totalItems = await config.getCount(queryBuilder.clone())
             }
         } else {
             ;[items, totalItems] = await queryBuilder.getManyAndCount()

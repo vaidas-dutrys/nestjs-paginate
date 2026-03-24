@@ -921,6 +921,11 @@ export async function paginate<T extends ObjectLiteral>(
             if (!config.withoutCount) {
                 totalItems = await config.getCount(queryBuilder.clone())
             }
+        } else if (config.buildCountQuery) {
+            items = await queryBuilder.getMany()
+            if (!config.withoutCount) {
+                totalItems = await config.buildCountQuery(queryBuilder.clone()).getCount()
+            }
         } else {
             ;[items, totalItems] = await queryBuilder.getManyAndCount()
         }
